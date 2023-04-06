@@ -5,7 +5,6 @@ from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_kms as kms
-from aws_cdk import aws_neptune_alpha as neptune
 from aws_cdk import aws_rds as rds
 from aws_cdk import aws_redshift_alpha as redshift
 from aws_cdk import aws_redshiftserverless as redshiftserverless
@@ -52,8 +51,6 @@ class DatabasesStack(Stack):  # type: ignore
             self._setup_sqlserver()
         if databases_context["oracle"]:
             self._setup_oracle()
-        if databases_context["neptune"]:
-            self._setup_neptune()
 
     def _set_db_infra(self) -> None:
         self.db_username = "test"
@@ -687,20 +684,3 @@ class DatabasesStack(Stack):  # type: ignore
         CfnOutput(self, "OraclePort", value=str(port))
         CfnOutput(self, "OracleDatabase", value=database)
         CfnOutput(self, "OracleSchema", value=schema)
-
-    def _setup_neptune(self, iam_enabled: bool = False, port: int = 8182) -> None:
-        cluster = neptune.DatabaseCluster(
-            self,
-            "aws-sdk-pandas-neptune-cluster",
-            removal_policy=RemovalPolicy.DESTROY,
-            instance_type=neptune.InstanceType.R5_LARGE,
-            iam_authentication=iam_enabled,
-            vpc=self.vpc,
-            subnet_group=self.rds_subnet_group,
-            security_groups=[self.db_security_group],
-        )
-
-        CfnOutput(self, "NeptuneClusterEndpoint", value=cluster.cluster_endpoint.hostname)
-        CfnOutput(self, "NeptuneReaderEndpoint", value=cluster.cluster_read_endpoint.hostname)
-        CfnOutput(self, "NeptunePort", value=str(port))
-        CfnOutput(self, "NeptuneIAMEnabled", value=str(iam_enabled))
